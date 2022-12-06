@@ -180,14 +180,21 @@ INT_PTR WINAPI Dlg_Proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 HBITMAP CopyActWndToBitmap() {
     HBITMAP hBitmap = NULL, hOldBitmap = NULL;
     HDC dcActive = NULL;
-    RECT rcWin = { 0 };
+    RECT rcRect = { 0 };
+    POINT ptClientStart = { 0 };
     HWND hActive = GetForegroundWindow();
-    HRESULT hr = DwmGetWindowAttribute(hActive, DWMWA_EXTENDED_FRAME_BOUNDS, &rcWin, sizeof(rcWin));
-    if (hr == S_OK) {
-        return CopyScreenToBitmap(&rcWin);
-    } else {
-        return NULL;
-    }
+    GetClientRect(hActive, &rcRect);
+    ClientToScreen(hActive, &ptClientStart);
+    OffsetRect(&rcRect, ptClientStart.x, ptClientStart.y);
+
+    //HRESULT hr = DwmGetWindowAttribute(hActive, DWMWA_EXTENDED_FRAME_BOUNDS, &rcWin, sizeof(rcWin));
+    //if (hr == S_OK) {
+    //    return CopyScreenToBitmap(&rcWin);
+    //} else {
+    //    return NULL;
+    //}
+
+    return CopyScreenToBitmap(&rcRect);
 }
 
 HBITMAP CopyScreenToBitmap(LPRECT lpRect)
