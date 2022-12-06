@@ -1,0 +1,8 @@
+# Default ignored files
+/Debug/
+/Release/
+/ScreenCapture/Debug/
+/ScreenCapture/Release/
+/ScreenCaptureHook/Debug/
+/ScreenCaptureHook/Release/
+/.vs/
