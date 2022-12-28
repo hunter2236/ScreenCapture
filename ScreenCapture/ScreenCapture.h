@@ -11,9 +11,12 @@ typedef struct _captureData {
 	TCHAR szSaveDir[MAX_PATH + 1];
 	TCHAR szSaveFileName[MAX_PATH + 1];
 	TCHAR szEnvName[MAX_PATH + 1];
+	BOOL bCapWinClient;
 	BOOL bCopy2Clipboard;
 	BOOL bOpenImage;
-	int idxFileName;
+	int idxLevel1;
+	int idxLevel2;
+	int idxLevel3;
 	CaptureMode captureMode;
 }CaptureData;
 

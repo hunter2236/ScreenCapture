@@ -9,7 +9,10 @@
 #define KEY_SAVEDIR TEXT("SaveDir")
 #define KEY_SAVEFILENAME TEXT("SaveFileName")
 #define KEY_SAVEENV TEXT("SaveEnv")
-#define KEY_SAVEFILEIDX TEXT("SaveFileIndex")
+#define KEY_SAVEFILEIDXL1 TEXT("SaveFileIndexL1")
+#define KEY_SAVEFILEIDXL2 TEXT("SaveFileIndexL2")
+#define KEY_SAVEFILEIDXL3 TEXT("SaveFileIndexL3")
+#define KEY_CAPWINCLIENT TEXT("CaptureWindowClient")
 #define KEY_COPYTOCLIPBOARD TEXT("CopyToClipboard")
 #define KEY_CAPTUREMODE TEXT("CaptureMode")
 #define KEY_OPENIMAGE TEXT("OpenImage")
@@ -24,6 +27,7 @@
 TCHAR g_szIniFileFullPath[MAX_PATH + 1] = { 0 };
 
 void SetCaptureArea(TCHAR* szCaptureArea);
+void SplitString(TCHAR* szSource, const PTCHAR delims, TCHAR*** lpSplite, int* count);
 
 void LoadIniFile(HINSTANCE hInstance)
 {
@@ -43,7 +47,17 @@ void ReadConfig()
 	GetPrivateProfileString(SECTION, KEY_SAVEDIR, DEFAULT_SAVEDIR, g_capData.szSaveDir, MAX_PATH + 1, g_szIniFileFullPath);
 	GetPrivateProfileString(SECTION, KEY_SAVEFILENAME, DEFAULT_FILENAME, g_capData.szSaveFileName, MAX_PATH + 1, g_szIniFileFullPath);
 	GetPrivateProfileString(SECTION, KEY_SAVEENV, DEFAULT_ENVNAME, g_capData.szEnvName, MAX_PATH + 1, g_szIniFileFullPath);
-	g_capData.idxFileName = GetPrivateProfileInt(SECTION, KEY_SAVEFILEIDX, 1, g_szIniFileFullPath);
+	g_capData.idxLevel1 = GetPrivateProfileInt(SECTION, KEY_SAVEFILEIDXL1, 1, g_szIniFileFullPath);
+	g_capData.idxLevel2 = GetPrivateProfileInt(SECTION, KEY_SAVEFILEIDXL2, 1, g_szIniFileFullPath);
+	g_capData.idxLevel3 = GetPrivateProfileInt(SECTION, KEY_SAVEFILEIDXL3, 1, g_szIniFileFullPath);
+
+	int iCapWinClient = GetPrivateProfileInt(SECTION, KEY_CAPWINCLIENT, 0, g_szIniFileFullPath);
+	if (iCapWinClient == 0) {
+		g_capData.bCapWinClient = FALSE;
+	}
+	else {
+		g_capData.bCapWinClient = TRUE;
+	}
 
 	int iCopy2Clipboard = GetPrivateProfileInt(SECTION, KEY_COPYTOCLIPBOARD, 0, g_szIniFileFullPath);
 	if (iCopy2Clipboard == 0) {
@@ -67,6 +81,9 @@ void SaveConfig(HWND hwnd)
 {
 	TCHAR szCaptureArea[MAX_PATH + 1] = { 0 };
 	TCHAR szFileIndex[MAX_PATH + 1] = { 0 };
+	TCHAR szFileIndexL1[MAX_PATH + 1] = { 0 };
+	TCHAR szFileIndexL2[MAX_PATH + 1] = { 0 };
+	TCHAR szFileIndexL3[MAX_PATH + 1] = { 0 };
 	TCHAR szValue[2] = { 0 };
 	GetDlgItemText(hwnd, IDC_CAPTUREAREA, szCaptureArea, MAX_PATH + 1);
 	SetCaptureArea(szCaptureArea);
@@ -78,24 +95,72 @@ void SaveConfig(HWND hwnd)
 
 	g_capData.bOpenImage = IsDlgButtonChecked(hwnd, IDC_OPENIMAGE);
 	g_capData.bCopy2Clipboard = IsDlgButtonChecked(hwnd, IDC_COPY2CLIPBOARD);
+	g_capData.bCapWinClient = IsDlgButtonChecked(hwnd, IDC_CHKCLIENTAREA);
 
 	WritePrivateProfileString(SECTION, KEY_CAPAREA, g_szCaptureArea, g_szIniFileFullPath);
 	WritePrivateProfileString(SECTION, KEY_SAVEDIR, g_capData.szSaveDir, g_szIniFileFullPath);
 	WritePrivateProfileString(SECTION, KEY_SAVEFILENAME, g_capData.szSaveFileName, g_szIniFileFullPath);
 	WritePrivateProfileString(SECTION, KEY_SAVEENV, g_capData.szEnvName, g_szIniFileFullPath);
 
-	int inputValue = _ttoi(szFileIndex);
-	if (g_capData.idxFileName != inputValue) {
-		g_capData.idxFileName = inputValue;
+	TCHAR** lpSplit = NULL;
+	int arrayLength = 0;
+	SplitString(szFileIndex, TEXT("-"), &lpSplit, &arrayLength);
+
+	if (arrayLength == 1) {
+		int inputValue = _ttoi(lpSplit[0]);
+		if (g_capData.idxLevel3 != inputValue) {
+			g_capData.idxLevel3 = inputValue;
+		}
+
+		_itot(g_capData.idxLevel3, szFileIndexL3, 10);
+		WritePrivateProfileString(SECTION, KEY_SAVEFILEIDXL1, TEXT("0"), g_szIniFileFullPath);
+		WritePrivateProfileString(SECTION, KEY_SAVEFILEIDXL1, TEXT("0"), g_szIniFileFullPath);
+		WritePrivateProfileString(SECTION, KEY_SAVEFILEIDXL3, szFileIndexL3, g_szIniFileFullPath);
+	}else {
+		int inputValue1 = _ttoi(lpSplit[0]);
+		if (g_capData.idxLevel1 != inputValue1) {
+			g_capData.idxLevel1 = inputValue1;
+		}
+		_itot(g_capData.idxLevel1, szFileIndexL1, 10);
+
+		int inputValue2 = _ttoi(lpSplit[1]);
+		if (g_capData.idxLevel2 != inputValue2) {
+			g_capData.idxLevel2 = inputValue2;
+		}
+		_itot(g_capData.idxLevel2, szFileIndexL2, 10);
+
+		int inputValue3 = _ttoi(lpSplit[2]);
+		if (g_capData.idxLevel3 != inputValue3) {
+			g_capData.idxLevel3 = inputValue3;
+		}
+		_itot(g_capData.idxLevel3, szFileIndexL3, 10);
+
+		WritePrivateProfileString(SECTION, KEY_SAVEFILEIDXL1, szFileIndexL1, g_szIniFileFullPath);
+		WritePrivateProfileString(SECTION, KEY_SAVEFILEIDXL1, szFileIndexL2, g_szIniFileFullPath);
+		WritePrivateProfileString(SECTION, KEY_SAVEFILEIDXL3, szFileIndexL3, g_szIniFileFullPath);
 	}
-	_itot(g_capData.idxFileName, szFileIndex, 10);
-	WritePrivateProfileString(SECTION, KEY_SAVEFILEIDX, szFileIndex, g_szIniFileFullPath);
+
+	for (int i = 0; i < arrayLength; i++) {
+		delete[] lpSplit[0];
+		lpSplit[0] = NULL;
+	}
+
+	delete[] lpSplit;
+	lpSplit = NULL;
+
 
 	if (g_capData.bOpenImage) {
 		WritePrivateProfileString(SECTION, KEY_OPENIMAGE, VAL_ON, g_szIniFileFullPath);
 	}
 	else {
 		WritePrivateProfileString(SECTION, KEY_OPENIMAGE, VAL_OFF, g_szIniFileFullPath);
+	}
+
+	if (g_capData.bCapWinClient) {
+		WritePrivateProfileString(SECTION, KEY_CAPWINCLIENT, VAL_ON, g_szIniFileFullPath);
+	}
+	else {
+		WritePrivateProfileString(SECTION, KEY_CAPWINCLIENT, VAL_OFF, g_szIniFileFullPath);
 	}
 
 	if (g_capData.bCopy2Clipboard) {
@@ -108,7 +173,6 @@ void SaveConfig(HWND hwnd)
 	_itow(g_capData.captureMode, szValue, 10);
 	WritePrivateProfileString(SECTION, KEY_CAPTUREMODE, szValue, g_szIniFileFullPath);
 }
-
 
 void SetCaptureArea(TCHAR* szCaptureArea)
 {
@@ -134,4 +198,25 @@ void SetCaptureArea(TCHAR* szCaptureArea)
 		}
 		idx++;
 	}
+}
+
+
+void SplitString(TCHAR* szSource, const PTCHAR delims, TCHAR*** lpSplite, int* count)
+{
+	LPRECT lpArea = &(g_capData.CaptureArea);
+	TCHAR* result = NULL;
+	result = _tcstok(szSource, delims);
+
+	TCHAR** splitArray = new TCHAR*[5];
+	int idx = 0;
+	while (result != NULL) {
+		int stringSize =  lstrlen(result) + 1;
+		splitArray[idx] = new TCHAR[stringSize];
+		lstrcpy(splitArray[idx], result);
+
+		result = _tcstok(NULL, delims);
+		idx++;
+	}
+	*lpSplite = splitArray;
+	*count = idx;
 }
